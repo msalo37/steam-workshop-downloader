@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WorkshopDownloader" xmlns:col="clr-namespace:System.Collections;assembly=mscorlib"
         mc:Ignorable="d"
         Title="Steam workshop mods installer" Height="450" Width="800">
     <Grid>
@@ -19,22 +18,29 @@
         
         <DockPanel Grid.Column="1">
             <Label DockPanel.Dock="Top" Height="25" VerticalAlignment="Top">Server url</Label>
-            <TextBox DockPanel.Dock="Top" VerticalAlignment="Top" Name="TextBoxServerUrl" Height="25" Text="https://node03.steamworkshopdownloader.io/" Margin="0,0,0,5"/>
-            <Label DockPanel.Dock="Top" Height="25" VerticalAlignment="Top">Mods folder</Label>
-            <TextBox DockPanel.Dock="Top" VerticalAlignment="Top" Name="TextBoxModsFolder" Height="25" Margin="0,0,0,5"/>
-            <Button DockPanel.Dock="Top" VerticalAlignment="Top" Content="Choose folder" Height="25" Margin="0,0,0,5" Click="Button_Click"></Button>
+            <TextBox DockPanel.Dock="Top" VerticalAlignment="Top" Name="TextBox_ServerURL" Height="25" Text="https://node03.steamworkshopdownloader.io/" Margin="0,0,0,5"/>
+            <CheckBox DockPanel.Dock="Top" VerticalAlignment="Top" Content="Request real mod names (a bit delay when adding mods)" Name="CheckBox_RequestRealNames" Height="25" Margin="0,0,0,5" IsChecked="True"></CheckBox>
 
-            <Button DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Height="25" Content="Download all mods" Click="Button_Click_1"></Button>
+            <Label DockPanel.Dock="Top" Height="25" VerticalAlignment="Top">Mods folder</Label>
+            <TextBox DockPanel.Dock="Top" VerticalAlignment="Top" Name="TextBox_ModsFolderPath" Height="25" Margin="0,0,0,5"/>
+            <Button DockPanel.Dock="Top" VerticalAlignment="Top" Content="Choose folder" Height="25" Margin="0,0,0,5" Click="Button_Folder_Click"></Button>
+            
+            <Button DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Height="25" Content="Download all mods" Click="Button_DownloadAll_Click"></Button>
         </DockPanel>
 
-        <TextBox Name="TextBoxContentAdd" Grid.Row="0" Height="25" VerticalAlignment="Top" KeyDown="TextBox_KeyDown"></TextBox>
+        <TextBox Name="TextBox_AddMod" Grid.Row="0" Height="25" VerticalAlignment="Top" KeyDown="AddMod_KeyDown"></TextBox>
         <ListView  Grid.Row="0" Name="WorkshopListView" Margin="0,25,0,0">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn  Header="Title" DisplayMemberBinding="{Binding Path=Title}" Width="50"></GridViewColumn>
-                    <GridViewColumn  Header="id" DisplayMemberBinding="{Binding Path=Id}" Width="130"></GridViewColumn>
+                    <GridViewColumn  Header="Title" DisplayMemberBinding="{Binding Path=Title}" Width="150"></GridViewColumn>
+                    <GridViewColumn  Header="id" DisplayMemberBinding="{Binding Path=Id}" Width="100"></GridViewColumn>
                 </GridView>
             </ListView.View>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Remove" Click="MenuItem_Click"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
         </ListView>
         
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2">

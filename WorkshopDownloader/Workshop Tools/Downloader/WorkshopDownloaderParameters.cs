@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WorkshopDownloader
+namespace WorkshopTools.Downloader
 {
-    class WorkshopDownloaderParameters
+    public class WorkshopDownloaderParameters
     {
-        public long publishedFileId;
-        public long? collectionId;
+        public ulong publishedFileId;
+        public ulong? collectionId;
         public bool hidden;
         public string downloadFormat;
         public bool autodownload;

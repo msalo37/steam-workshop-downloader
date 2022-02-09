@@ -5,12 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.IO;
 using System.Net.Http;
-using Newtonsoft.Json;
-using System.Text;
-using Newtonsoft.Json.Linq;
-using System.Threading.Tasks;
-using System.IO.Compression;
-using System.Media;
+using WorkshopTools.Parser;
 
 namespace WorkshopDownloader
 {
@@ -19,55 +14,18 @@ namespace WorkshopDownloader
         public MainWindow()
         {
             InitializeComponent();
-            TextBoxModsFolder.Text = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
+            TextBox_ModsFolderPath.Text = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
+
             workshopItems = new List<WorkshopItem>();
             WorkshopListView.ItemsSource = workshopItems;
+
+            workshop = new WorkshopModParser();
         }
 
         private HttpClient httpClient = new HttpClient();
         private List<WorkshopItem> workshopItems;
 
-        private void TextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter) return;
-
-            string tx = TextBoxContentAdd.Text;
-            
-            if (long.TryParse(tx, out long resultId))
-            {
-                AddWorkshopItem(resultId);
-                TextBoxContentAdd.Clear();
-            }
-
-            if (Uri.TryCreate(tx, UriKind.Absolute, out Uri uriResult))
-            {
-                string finalId = HttpUtility.ParseQueryString(uriResult.Query).Get("id");
-                AddWorkshopItem(finalId);
-                TextBoxContentAdd.Clear();
-            }
-        }
-
-        private void AddWorkshopItem(string id)
-        {
-            if (long.TryParse(id, out long finalId))
-                AddWorkshopItem(finalId);
-        }
-
-        private void AddWorkshopItem(long id)
-        {
-            var data = new WorkshopItem()
-            {
-                Title = "Mod name",
-                Id = id
-            };
-
-            if (workshopItems.Find(x => x.Id.Equals(data.Id)) == null)
-            {
-                workshopItems.Add(data);
-                WorkshopListView.Items.Refresh();
-                StatusInfo.Content = $"Mod added {data.Id}";
-            }
-        }
+        private WorkshopModParser workshop;
 
         private void ChooseModsFolder()
         {
@@ -77,106 +35,89 @@ namespace WorkshopDownloader
                 var result = openFileDlg.ShowDialog();
                 if (result.ToString() != string.Empty)
                 {
-                    TextBoxModsFolder.Text = openFileDlg.SelectedPath;
+                    TextBox_ModsFolderPath.Text = openFileDlg.SelectedPath;
                 }
             }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Notify(string message)
         {
-            ChooseModsFolder();
+            StatusInfo.Content = message;
         }
 
         private async void DownloadAllMods()
         {
-            Uri downloadRequestUri = new Uri(TextBoxServerUrl.Text + "prod/api/download/request");
-
-            foreach (WorkshopItem item in workshopItems)
+            var downloader = new WorkshopTools.Downloader.WorkshopDownloader(TextBox_ServerURL.Text, TextBox_ModsFolderPath.Text, httpClient, Notify);
+            foreach (WorkshopItem workshopItem in workshopItems)
             {
-                StatusInfo.Content = "Requesting mod with id " + item.Id;
-
-                var body = new WorkshopDownloaderParameters()
-                {
-                    publishedFileId = item.Id,
-                    collectionId = null,
-                    hidden = true,
-                    downloadFormat = "raw",
-                    autodownload = true
-                };
-
-                HttpResponseMessage response = await httpClient.PostAsync(downloadRequestUri, new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json"));
-
-                if (response.IsSuccessStatusCode == false) continue;
-
-                string responseString = await response.Content.ReadAsStringAsync();
-                string uuid = (string)JObject.Parse(responseString)["uuid"];
-
-                StatusInfo.Content = $"Mod ({item.Id}) got uuid - {uuid}";
-                await CheckDownloadStatus(item.Id, uuid);
+                bool status = await downloader.DownloadModAsync(workshopItem.Id);
+                if (status == true)
+                    Unzipper.UnzipFileAsync(Path.Combine(TextBox_ModsFolderPath.Text, workshopItem.Id + ".zip"));
             }
-
-            SystemSounds.Beep.Play();
-            StatusInfo.Content = "All mods downloaded!";
+            Notify("All modes downloaded!");
         }
 
-        private async Task CheckDownloadStatus(long itemId, string uuid)
+        private void RemoveWorkshopItem(WorkshopItem workshopItem)
         {
-            Uri downloadRequestUri = new Uri(TextBoxServerUrl.Text + "prod/api/download/status");
+            workshopItems.Remove(workshopItem);
+            WorkshopListView.Items.Refresh();
+        }
 
-            // Try 10 times for 2 seconds of waiting
-            for (int i = 0; i < 10; i++)
+        // Window functions \\
+
+        private void AddMod_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+
+            string typedText = TextBox_AddMod.Text;
+
+            if (ulong.TryParse(typedText, out ulong resultId))
             {
-                StatusInfo.Content = $"{i+1} - Checking mod ({uuid})";
+                AddWorkshopItemAsync(resultId);
+                TextBox_AddMod.Clear();
+            }
 
-                HttpResponseMessage response = await httpClient.PostAsync(downloadRequestUri, new StringContent("{\"uuids\": [\"" + uuid + "\"]}", Encoding.UTF8, "application/json"));
-                string responseString = await response.Content.ReadAsStringAsync();
-
-                if (responseString.Contains("prepared"))
-                {
-                    JObject json = JObject.Parse(responseString);
-                    string storageNode = (string)json[uuid]["storageNode"];
-                    string storagePath = (string)json[uuid]["storagePath"];
-
-                    StatusInfo.Content = $"Ready to start download! {storageNode}/prod/storage/{storagePath}";
-                    await DownloadFile(itemId, uuid, storageNode, storagePath);
-                    break;
-                }
-
-                await Task.Delay(2 * 1000);
+            if (Uri.TryCreate(typedText, UriKind.Absolute, out Uri uriResult))
+            {
+                string finalId = HttpUtility.ParseQueryString(uriResult.Query).Get("id");
+                AddWorkshopItem(finalId);
+                TextBox_AddMod.Clear();
             }
         }
 
-        private async Task DownloadFile(long itemId, string uuid, string storageNode, string storagePath)
+        private void AddWorkshopItem(string id)
         {
-            StatusInfo.Content = $"Mod is downloading from server ({itemId})";
-            Uri downloadRequestUri = new Uri($"https://{storageNode}/prod/storage/{storagePath}?uuid={uuid}");
-            HttpResponseMessage response = await httpClient.GetAsync(downloadRequestUri);
-            string filePath = Path.Combine(TextBoxModsFolder.Text, $"{itemId}.zip");
-            using (var fs = new FileStream(filePath, FileMode.OpenOrCreate))
+            if (ulong.TryParse(id, out ulong finalId))
+                AddWorkshopItemAsync(finalId);
+        }
+
+        private async void AddWorkshopItemAsync(ulong id)
+        {
+            string addonName = (bool)CheckBox_RequestRealNames.IsChecked ? await workshop.GetTitle(id) : "Mod Name";
+
+            var data = new WorkshopItem(addonName, id);
+
+            if (workshopItems.Find(x => x.Id.Equals(data.Id)) == null)
             {
-                await response.Content.CopyToAsync(fs);
-                StatusInfo.Content = $"Mod ({itemId}) downloaded!";
+                workshopItems.Add(data);
+                WorkshopListView.Items.Refresh();
             }
-
-            UnzipFile(filePath);
         }
 
-        private async void UnzipFile(string filePath)
+        private void Button_Folder_Click(object sender, RoutedEventArgs e)
         {
-            string extractPath = filePath.Replace(".zip", "");
-
-            if (Directory.Exists(extractPath))
-                Directory.Delete(extractPath, true);
-
-            Directory.CreateDirectory(extractPath);
-            await Task.Run(() => ZipFile.ExtractToDirectory(filePath, extractPath));
-
-            File.Delete(filePath);
+            ChooseModsFolder();
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private void Button_DownloadAll_Click(object sender, RoutedEventArgs e)
         {
             DownloadAllMods();
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = (WorkshopItem)WorkshopListView.SelectedItem;
+            RemoveWorkshopItem(selected);
         }
     }
 }

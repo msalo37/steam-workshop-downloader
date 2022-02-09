@@ -6,7 +6,13 @@ namespace WorkshopDownloader
 {
     class WorkshopItem
     {
+        public WorkshopItem(string title, ulong id)
+        {
+            Title = title;
+            Id = id;
+        }
+
         public string Title { get; set; }
-        public long Id { get; set; }
+        public ulong Id { get; set; }
     }
 }
