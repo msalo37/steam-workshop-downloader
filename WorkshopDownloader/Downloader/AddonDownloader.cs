@@ -6,11 +6,11 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WorkshopTools.Downloader
+namespace WorkshopDownloader.Downloader
 {
-    public class WorkshopDownloader
+    public class AddonDownloader
     {
-        public WorkshopDownloader(string serverUrl, string modPath, HttpClient httpClient = null, Action<string> handler = null)
+        public AddonDownloader(string serverUrl, string modPath, HttpClient httpClient = null, Action<string> handler = null)
         {
             this.modsFolderPath = modPath;
             this.serverUrl = serverUrl;
@@ -34,7 +34,7 @@ namespace WorkshopTools.Downloader
             if (uuid == string.Empty) return false;
             statusHandler?.Invoke($"{id} now has uuid - {uuid}");
 
-            DownloadRequestInfo requestInfo = new DownloadRequestInfo(false);
+            DownloadRequestResponse requestInfo = new DownloadRequestResponse(false);
             for (int _ = 0; _ < 10; _++)
             {
                 statusHandler?.Invoke($"Attempt {_+1} for mod request status of {id}");
@@ -56,13 +56,13 @@ namespace WorkshopTools.Downloader
         {
             Uri downloadRequestUri = new Uri(serverUrl + "prod/api/download/request");
 
-            var body = new WorkshopDownloaderParameters()
+            var body = new DownloadRequestParameters()
             {
-                publishedFileId = id,
-                collectionId = null,
-                hidden = true,
-                downloadFormat = "raw",
-                autodownload = true
+                PublishedFileId = id,
+                CollectionId = null,
+                IsHidden = true,
+                DownloadFormat = "raw",
+                AutoDownload = true
             };
 
             HttpResponseMessage response = await httpClient.PostAsync(downloadRequestUri, new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json"));
@@ -75,7 +75,7 @@ namespace WorkshopTools.Downloader
             return uuid;
         }
 
-        private async Task<DownloadRequestInfo> CheckRequestStatusAsync(string uuid)
+        private async Task<DownloadRequestResponse> CheckRequestStatusAsync(string uuid)
         {
             Uri downloadRequestUri = new Uri(serverUrl + "prod/api/download/status");
 
@@ -88,10 +88,10 @@ namespace WorkshopTools.Downloader
                 string storageNode = (string)json[uuid]["storageNode"];
                 string storagePath = (string)json[uuid]["storagePath"];
 
-                return new DownloadRequestInfo(true, storageNode, storagePath);
+                return new DownloadRequestResponse(true, storageNode, storagePath);
             }
 
-            return new DownloadRequestInfo(false);
+            return new DownloadRequestResponse(false);
         }
 
         private async Task DownloadFileAsync(ulong itemId, string uuid, string storageNode, string storagePath)

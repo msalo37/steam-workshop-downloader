@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WorkshopTools.Downloader
+﻿namespace WorkshopDownloader.Downloader
 {
-    public class DownloadRequestInfo
+    public class DownloadRequestResponse
     {
-        public DownloadRequestInfo(bool available, string storageNode, string storagePath)
+        public DownloadRequestResponse(bool available, string storageNode, string storagePath)
         {
             this.available = available;
             this.storageNode = storageNode;
             this.storagePath = storagePath;
         }
 
-        public DownloadRequestInfo(bool available)
+        public DownloadRequestResponse(bool available)
         {
             this.available = available;
         }
