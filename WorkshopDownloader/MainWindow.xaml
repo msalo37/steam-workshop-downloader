@@ -36,7 +36,10 @@
         </DockPanel>
 
         <DockPanel Grid.Row="0" VerticalAlignment="Top" Height="25" LastChildFill="True">
-            <Button DockPanel.Dock="Right" Width="25" Height="25" Click="Button_AddMod">
+            <Button DockPanel.Dock="Right" Width="25" Height="25" Click="Button_AddCollection" ToolTip="Add collection">
+                <Image Source="Resources/basket_add.png" Height="15" Width="15"></Image>
+            </Button>
+            <Button DockPanel.Dock="Right" Width="25" Height="25" Click="Button_AddMod" ToolTip="Add Addon">
                 <Image Source="Resources/add.png" Height="15" Width="15"></Image>
             </Button>
             <TextBox Name="TextBox_AddMod" Height="25" VerticalContentAlignment="Center" KeyDown="AddMod_KeyDown"/>

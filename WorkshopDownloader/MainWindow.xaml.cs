@@ -18,16 +18,18 @@ namespace WorkshopDownloader
             InitializeComponent();
             TextBox_ModsFolderPath.Text = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
 
-            addonList = new List<WorkshopItem>();
+            addonList = new List<WorkshopAddon>();
             WorkshopListView.ItemsSource = addonList;
 
-            workshopParser = new WorkshopAddonParser();
+            workshopAddon = new WorkshopAddonParser();
+            workshopCollection = new WorkshopCollectionParser();
         }
 
         private HttpClient httpClient = new HttpClient();
-        private List<WorkshopItem> addonList;
+        private List<WorkshopAddon> addonList;
 
-        private WorkshopAddonParser workshopParser;
+        private WorkshopAddonParser workshopAddon;
+        private WorkshopCollectionParser workshopCollection;
 
         private void ChooseModsFolder()
         {
@@ -51,7 +53,7 @@ namespace WorkshopDownloader
         {
             var downloader = new AddonDownloader(TextBox_ServerURL.Text, TextBox_ModsFolderPath.Text, httpClient, Notify);
             ProgressBar.Maximum = addonList.Count;
-            foreach (WorkshopItem workshopItem in addonList)
+            foreach (WorkshopAddon workshopItem in addonList)
             {
                 bool status = await downloader.DownloadModAsync(workshopItem.Id);
                 if (status == true)
@@ -61,7 +63,7 @@ namespace WorkshopDownloader
             Notify("All modes downloaded!");
         }
 
-        private void RemoveAddon(WorkshopItem workshopItem)
+        private void RemoveAddon(WorkshopAddon workshopItem)
         {
             addonList.Remove(workshopItem);
             WorkshopListView.Items.Refresh();
@@ -95,7 +97,7 @@ namespace WorkshopDownloader
 
             if (CheckBox_RequestRealNames.IsChecked == true)
             {
-                PublishedFileDetails fileDetails = await workshopParser.RequestFileDetails(id);
+                PublishedFileDetails fileDetails = await workshopAddon.RequestFileDetails(id);
                 addonName = fileDetails.Title;
             }
             else
@@ -103,12 +105,28 @@ namespace WorkshopDownloader
                 addonName = "Addon name";
             }
 
-            var data = new WorkshopItem(addonName, id);
+            var data = new WorkshopAddon(addonName, id);
 
             if (addonList.Find(x => x.Id.Equals(data.Id)) == null)
             {
                 addonList.Add(data);
                 WorkshopListView.Items.Refresh();
+            }
+        }
+
+        private async void AddCollectionAsync(ulong collectionId)
+        {
+            var addons = await workshopCollection.RequestCollectionDetails(collectionId);
+            foreach (var addon in addons)
+            {
+                if (TryToGetAddonId(addon.PublishedFileId, out ulong id))
+                {
+                    AddAddonAsync(id);
+                }
+                else
+                {
+                    Notify("An error occurred while trying to get id from addon with id " + addon.PublishedFileId);
+                }
             }
         }
 
@@ -124,6 +142,19 @@ namespace WorkshopDownloader
             else
             {
                 Notify("An error occurred while trying to get id from addon");
+            }
+        }
+
+        private void AddCollectionFromText()
+        {
+            if (TryToGetAddonId(TextBox_AddMod.Text, out ulong id))
+            {
+                AddCollectionAsync(id);
+                TextBox_AddMod.Clear();
+            }
+            else
+            {
+                Notify("An error occurred while trying to get id from collection");
             }
         }
 
@@ -145,13 +176,18 @@ namespace WorkshopDownloader
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var selected = (WorkshopItem)WorkshopListView.SelectedItem;
+            var selected = (WorkshopAddon)WorkshopListView.SelectedItem;
             RemoveAddon(selected);
         }
 
         private void Button_AddMod(object sender, RoutedEventArgs e)
         {
             AddAddonFromText();
+        }
+
+        private void Button_AddCollection(object sender, RoutedEventArgs e)
+        {
+            AddCollectionFromText();
         }
     }
 }

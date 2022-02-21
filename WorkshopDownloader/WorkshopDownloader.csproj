@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <None Remove="Resources\add.png" />
+    <None Remove="Resources\basket_add.png" />
     <None Remove="Resources\folder_explore.png" />
   </ItemGroup>
 
@@ -26,6 +27,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\add.png" />
+    <Resource Include="Resources\basket_add.png" />
     <Resource Include="Resources\folder_explore.png" />
   </ItemGroup>
 

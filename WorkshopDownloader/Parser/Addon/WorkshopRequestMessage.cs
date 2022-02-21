@@ -10,10 +10,10 @@ namespace WorkshopDownloader.Parser
     public partial class WorkshopRequestMessage
     {
         [JsonProperty("response")]
-        public Response Response { get; set; }
+        public WorkshopRequestResponse Response { get; set; }
     }
 
-    public partial class Response
+    public partial class WorkshopRequestResponse
     {
         [JsonProperty("result")]
         public long Result { get; set; }

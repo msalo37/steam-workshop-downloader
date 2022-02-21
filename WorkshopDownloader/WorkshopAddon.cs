@@ -6,9 +6,9 @@ using System.Windows.Media.Imaging;
 
 namespace WorkshopDownloader
 {
-    class WorkshopItem
+    class WorkshopAddon
     {
-        public WorkshopItem(string title, ulong id)
+        public WorkshopAddon(string title, ulong id)
         {
             Title = title;
             Id = id;
