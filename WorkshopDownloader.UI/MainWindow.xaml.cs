@@ -15,10 +15,6 @@ namespace WorkshopDownloader
 {
     public partial class MainWindow : Window
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool AllocConsole();
-
         public MainWindow()
         {
             InitializeComponent();
@@ -27,17 +23,14 @@ namespace WorkshopDownloader
             addonList = new List<Addon>();
             WorkshopListView.ItemsSource = addonList;
 
-            addonParser = new AddonInfoParser();
+            addonInfoParser = new AddonInfoParser();
             collectionParser = new CollectionParser();
-
-            AllocConsole();
         }
 
         private HttpClient httpClient = new HttpClient();
         private List<Addon> addonList;
 
-        private BaseParser addonParser, collectionParser;
-        private AddonDownloader addonDownloader;
+        private BaseParser addonInfoParser, collectionParser;
 
         private void ChooseModsFolder()
         {
@@ -59,13 +52,15 @@ namespace WorkshopDownloader
 
         private async void DownloadAllMods()
         {
-            var downloader = new AddonDownloader(TextBox_ServerURL.Text, TextBox_ModsFolderPath.Text, httpClient, Notify);
+            //AddonDownloader downloader = new SWDioAddonDownloader(TextBox_ServerURL.Text, TextBox_ModsFolderPath.Text, httpClient, Notify);
+            AddonDownloader downloader = new Vova1234AddonDownloader(TextBox_ModsFolderPath.Text, addonInfoParser as AddonInfoParser, httpClient, Notify);
+
             ProgressBar.Maximum = addonList.Count;
             foreach (Addon workshopItem in addonList)
             {
-                bool status = await downloader.DownloadModAsync(workshopItem.Id);
+                bool status = await downloader.DownloadAddonAsync(workshopItem.Id);
                 if (status == true)
-                    Unzipper.UnzipFileAsync(Path.Combine(TextBox_ModsFolderPath.Text, workshopItem.Id + ".zip"));
+                    Unzipper.UnzipFileAsync(Path.Combine(TextBox_ModsFolderPath.Text, workshopItem.Id + ".zip"), false);
                 ProgressBar.Value++;
             }
             Notify("All modes downloaded!");
@@ -105,7 +100,7 @@ namespace WorkshopDownloader
 
             if (CheckBox_RequestRealNames.IsChecked == true)
             {
-                string title = (await addonParser.RequestInfo(id))[0];
+                string title = (await addonInfoParser.RequestInfo(id))[0];
                 addonName = title;
             }
 

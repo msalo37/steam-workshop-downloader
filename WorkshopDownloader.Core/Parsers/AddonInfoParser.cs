@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -14,6 +13,17 @@ namespace WorkshopDownloader.Core.Parsers
 
         public async override Task<string[]> RequestInfo(ulong itemId)
         {
+            var workshopRequestMessage = await RequestAddonInfo(itemId);
+
+            string[] result = new string[workshopRequestMessage.Response.Count];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = workshopRequestMessage.Response.PublishedFileDetails[i].Title;
+
+            return result;
+        }
+
+        public async Task<WorkshopResponse<WorkshopResponseAddonDelails>> RequestAddonInfo(ulong itemId)
+        {
             var requestParameters = new List<KeyValuePair<string, string>>() {
                 new KeyValuePair<string, string>("itemcount", "1"),
                 new KeyValuePair<string, string>("publishedfileids[0]", itemId.ToString())
@@ -25,12 +35,7 @@ namespace WorkshopDownloader.Core.Parsers
 
             var workshopRequestMessage = JsonConvert.DeserializeObject<WorkshopResponse<WorkshopResponseAddonDelails>>(jsonStr);
             if (workshopRequestMessage.Response.Result != 1) return null;
-
-            string[] result = new string[workshopRequestMessage.Response.Count];
-            for (int i = 0; i < result.Length; i++)
-                result[i] = workshopRequestMessage.Response.PublishedFileDetails[i].Title;
-
-            return result;
+            return workshopRequestMessage;
         }
     }
 }

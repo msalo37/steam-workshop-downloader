@@ -2,7 +2,7 @@
 
 namespace WorkshopDownloader.Core.Parsers.RequestMessages
 {
-    class WorkshopResponse<T>
+    public partial class WorkshopResponse<T>
     {
         [JsonProperty("response")]
         public T Response { get; set; }

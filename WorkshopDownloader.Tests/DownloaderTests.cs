@@ -8,7 +8,7 @@ namespace WorkshopDownloader.Tests
 {
     public class DownloaderTests
     {
-        private AddonDownloader addonDownloader;
+        private SWDioAddonDownloader addonDownloader;
 
         [SetUp]
         public void Setup()

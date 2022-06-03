@@ -18,9 +18,11 @@
 
 
         <DockPanel Grid.Column="1">
+            <!--
+            No longer required as the method no longer works 
             <Label DockPanel.Dock="Top" Height="25" VerticalAlignment="Top">Server url</Label>
             <TextBox DockPanel.Dock="Top" VerticalAlignment="Top" Name="TextBox_ServerURL" Height="25" Text="https://node03.steamworkshopdownloader.io/" Margin="0,0,0,5"/>
-
+            !-->
             <Label DockPanel.Dock="Top" Height="25" VerticalAlignment="Top">Steam workshop</Label>
             <CheckBox DockPanel.Dock="Top" VerticalAlignment="Top" Content="Request real mod names (a bit delay when adding mods)" Name="CheckBox_RequestRealNames" Height="25" Margin="0,0,0,5" IsChecked="True"></CheckBox>
 
