@@ -1,4 +1,4 @@
-﻿namespace WorkshopDownloader.Downloader
+﻿namespace WorkshopDownloader.Core.Downloader.RequestMessages
 {
     public class DownloadRequestResponse
     {

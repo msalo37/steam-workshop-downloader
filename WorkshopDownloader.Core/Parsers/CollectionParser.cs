@@ -4,25 +4,15 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using WorkshopDownloader.Core.Parsers.RequestMessages;
 
-namespace WorkshopDownloader.Parser
+namespace WorkshopDownloader.Core.Parsers
 {
-    class WorkshopCollectionParser
+    public class CollectionParser : BaseParser
     {
-        public WorkshopCollectionParser(HttpClient httpClient)
-        {
-            this.httpClient = httpClient;
-        }
-
-        public WorkshopCollectionParser()
-        {
-            httpClient = new HttpClient();
-        }
-
         private const string url = "https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1/";
-        private HttpClient httpClient;
 
-        public async Task<CollectionAddonDetails[]> RequestCollectionDetails(ulong itemId)
+        public async override Task<string[]> RequestInfo(ulong itemId)
         {
             var requestParameters = new List<KeyValuePair<string, string>>() {
                 new KeyValuePair<string, string>("collectioncount", "1"),
@@ -33,12 +23,16 @@ namespace WorkshopDownloader.Parser
             var response = await httpClient.PostAsync(url, data);
             string jsonStr = await response.Content.ReadAsStringAsync();
 
-            var workshopRequestMessage = JsonConvert.DeserializeObject<WorkshopCollectionRequestMessage>(jsonStr);
+            var workshopRequestMessage = JsonConvert.DeserializeObject<WorkshopResponse<WorkshopResponseCollectionDelails>>(jsonStr);
 
             if (workshopRequestMessage.Response.Result != 1) return null;
-            if (workshopRequestMessage.Response.CollectionDetails[0].Result != 1) return null;
+            if (workshopRequestMessage.Response.Count == 0) return null;
 
-            return workshopRequestMessage.Response.CollectionDetails[0].CollectionAddonDetails;
+            string[] result = new string[workshopRequestMessage.Response.CollectionDetails[0].CollectionAddonDetails.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = workshopRequestMessage.Response.CollectionDetails[0].CollectionAddonDetails[i].PublishedFileId;
+
+            return result;
         }
     }
 }

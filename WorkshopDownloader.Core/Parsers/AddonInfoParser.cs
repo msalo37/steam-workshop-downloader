@@ -3,25 +3,16 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using WorkshopDownloader.Core.Parsers.RequestMessages;
 
-namespace WorkshopDownloader.Parser
+namespace WorkshopDownloader.Core.Parsers
 {
-    public class WorkshopAddonParser
+    public class AddonInfoParser : BaseParser
     {
-        public WorkshopAddonParser(HttpClient httpClient)
-        {
-            this.httpClient = httpClient;
-        }
-
-        public WorkshopAddonParser()
-        {
-            httpClient = new HttpClient();
-        }
-
         private const string url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
-        private HttpClient httpClient;
 
-        public async Task<PublishedFileDetails> RequestFileDetails(ulong itemId)
+
+        public async override Task<string[]> RequestInfo(ulong itemId)
         {
             var requestParameters = new List<KeyValuePair<string, string>>() {
                 new KeyValuePair<string, string>("itemcount", "1"),
@@ -32,9 +23,14 @@ namespace WorkshopDownloader.Parser
             var response = await httpClient.PostAsync(url, data);
             string jsonStr = await response.Content.ReadAsStringAsync();
 
-            var workshopRequestMessage = JsonConvert.DeserializeObject<WorkshopRequestMessage>(jsonStr);
+            var workshopRequestMessage = JsonConvert.DeserializeObject<WorkshopResponse<WorkshopResponseAddonDelails>>(jsonStr);
+            if (workshopRequestMessage.Response.Result != 1) return null;
 
-            return workshopRequestMessage.Response.PublishedFileDetails[0];
+            string[] result = new string[workshopRequestMessage.Response.Count];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = workshopRequestMessage.Response.PublishedFileDetails[i].Title;
+
+            return result;
         }
     }
 }

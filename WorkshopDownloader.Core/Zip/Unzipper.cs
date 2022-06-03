@@ -2,7 +2,7 @@
 using System.IO.Compression;
 using System.Threading.Tasks;
 
-namespace WorkshopDownloader.Zip
+namespace WorkshopDownloader.Core.ZipUtils
 {
     public static class Unzipper
     {

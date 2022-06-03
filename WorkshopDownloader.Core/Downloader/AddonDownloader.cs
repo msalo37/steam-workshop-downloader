@@ -5,8 +5,9 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using WorkshopDownloader.Core.Downloader.RequestMessages;
 
-namespace WorkshopDownloader.Downloader
+namespace WorkshopDownloader.Core.Downloader
 {
     public class AddonDownloader
     {

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace WorkshopDownloader.Downloader
+namespace WorkshopDownloader.Core.Downloader.RequestMessages
 {
     public class DownloadRequestParameters
     {

@@ -5,26 +5,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 // Generated with https://app.quicktype.io/?l=csharp
-namespace WorkshopDownloader.Parser
+namespace WorkshopDownloader.Core.Parsers.RequestMessages
 {
-    public partial class WorkshopRequestMessage
-    {
-        [JsonProperty("response")]
-        public WorkshopRequestResponse Response { get; set; }
-    }
-
-    public partial class WorkshopRequestResponse
-    {
-        [JsonProperty("result")]
-        public long Result { get; set; }
-
-        [JsonProperty("resultcount")]
-        public long Resultcount { get; set; }
-
-        [JsonProperty("publishedfiledetails")]
-        public PublishedFileDetails[] PublishedFileDetails { get; set; }
-    }
-
     public partial class PublishedFileDetails
     {
         [JsonProperty("publishedfileid")]
@@ -103,6 +85,6 @@ namespace WorkshopDownloader.Parser
     public partial class Tag
     {
         [JsonProperty("tag")]
-        public string TagTag { get; set; }
+        public string Title { get; set; }
     }
 }

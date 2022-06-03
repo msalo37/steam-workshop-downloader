@@ -5,31 +5,39 @@ using System.Windows;
 using System.Windows.Input;
 using System.IO;
 using System.Net.Http;
-using WorkshopDownloader.Parser;
-using WorkshopDownloader.Downloader;
-using WorkshopDownloader.Zip;
+using WorkshopDownloader.Core.Addons;
+using WorkshopDownloader.Core.Parsers;
+using WorkshopDownloader.Core.Downloader;
+using WorkshopDownloader.Core.ZipUtils;
+using System.Runtime.InteropServices;
 
 namespace WorkshopDownloader
 {
     public partial class MainWindow : Window
     {
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool AllocConsole();
+
         public MainWindow()
         {
             InitializeComponent();
             TextBox_ModsFolderPath.Text = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
 
-            addonList = new List<WorkshopAddon>();
+            addonList = new List<Addon>();
             WorkshopListView.ItemsSource = addonList;
 
-            workshopAddon = new WorkshopAddonParser();
-            workshopCollection = new WorkshopCollectionParser();
+            addonParser = new AddonInfoParser();
+            collectionParser = new CollectionParser();
+
+            AllocConsole();
         }
 
         private HttpClient httpClient = new HttpClient();
-        private List<WorkshopAddon> addonList;
+        private List<Addon> addonList;
 
-        private WorkshopAddonParser workshopAddon;
-        private WorkshopCollectionParser workshopCollection;
+        private BaseParser addonParser, collectionParser;
+        private AddonDownloader addonDownloader;
 
         private void ChooseModsFolder()
         {
@@ -53,7 +61,7 @@ namespace WorkshopDownloader
         {
             var downloader = new AddonDownloader(TextBox_ServerURL.Text, TextBox_ModsFolderPath.Text, httpClient, Notify);
             ProgressBar.Maximum = addonList.Count;
-            foreach (WorkshopAddon workshopItem in addonList)
+            foreach (Addon workshopItem in addonList)
             {
                 bool status = await downloader.DownloadModAsync(workshopItem.Id);
                 if (status == true)
@@ -63,13 +71,13 @@ namespace WorkshopDownloader
             Notify("All modes downloaded!");
         }
 
-        private void RemoveAddon(WorkshopAddon workshopItem)
+        private void RemoveAddon(Addon workshopItem)
         {
             addonList.Remove(workshopItem);
             WorkshopListView.Items.Refresh();
         }
 
-        private bool TryToGetAddonId(string text, out ulong id)
+        private bool TryToParseAddonId(string text, out ulong id)
         {
             id = 0;
 
@@ -93,39 +101,34 @@ namespace WorkshopDownloader
 
         private async void AddAddonAsync(ulong id)
         {
-            string addonName;
+            string addonName = "Addon name";
 
             if (CheckBox_RequestRealNames.IsChecked == true)
             {
-                PublishedFileDetails fileDetails = await workshopAddon.RequestFileDetails(id);
-                addonName = fileDetails.Title;
-            }
-            else
-            {
-                addonName = "Addon name";
+                string title = (await addonParser.RequestInfo(id))[0];
+                addonName = title;
             }
 
-            var data = new WorkshopAddon(addonName, id);
+            var data = new Addon(addonName, id);
 
-            if (addonList.Find(x => x.Id.Equals(data.Id)) == null)
-            {
-                addonList.Add(data);
-                WorkshopListView.Items.Refresh();
-            }
+            if (addonList.Find(x => x.Id.Equals(data.Id)) != null) return;
+
+            addonList.Add(data);
+            WorkshopListView.Items.Refresh();
         }
 
         private async void AddCollectionAsync(ulong collectionId)
         {
-            var addons = await workshopCollection.RequestCollectionDetails(collectionId);
-            foreach (var addon in addons)
+            string[] addons = await collectionParser.RequestInfo(collectionId);
+            foreach (var rawId in addons)
             {
-                if (TryToGetAddonId(addon.PublishedFileId, out ulong id))
+                if (TryToParseAddonId(rawId, out ulong id))
                 {
                     AddAddonAsync(id);
                 }
                 else
                 {
-                    Notify("An error occurred while trying to get id from addon with id " + addon.PublishedFileId);
+                    Notify("An error occurred while trying to get id from addon with id " + rawId);
                 }
             }
         }
@@ -134,7 +137,7 @@ namespace WorkshopDownloader
 
         private void AddAddonFromText()
         {
-            if (TryToGetAddonId(TextBox_AddMod.Text, out ulong id))
+            if (TryToParseAddonId(TextBox_AddMod.Text, out ulong id))
             {
                 AddAddonAsync(id);
                 TextBox_AddMod.Clear();
@@ -147,7 +150,7 @@ namespace WorkshopDownloader
 
         private void AddCollectionFromText()
         {
-            if (TryToGetAddonId(TextBox_AddMod.Text, out ulong id))
+            if (TryToParseAddonId(TextBox_AddMod.Text, out ulong id))
             {
                 AddCollectionAsync(id);
                 TextBox_AddMod.Clear();
@@ -176,7 +179,7 @@ namespace WorkshopDownloader
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var selected = (WorkshopAddon)WorkshopListView.SelectedItem;
+            var selected = (Addon)WorkshopListView.SelectedItem;
             RemoveAddon(selected);
         }
 
